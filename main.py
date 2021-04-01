@@ -16,9 +16,9 @@ class myLogger(object):
         print(msg)
 def my_hook(d):
     if(d['status'] == 'finished'):
-        print("Now Convert")
+        print("Finished : ", d['filename'])
         return
-    print(d['filename'], d['eta'], "sec")
+
 
 ydl_opts = {
     'format': 'best',
@@ -58,29 +58,37 @@ for fileOrDir in thisDir:
         savepath = join(mypath, "out"+fileOrDir)
         try:
             os.mkdir(savepath)
-        except:
-            pass
-        video = VideoFileClip(videopath)
-        doc,tag,text = Doc().tagtext()
-        with tag('html'):
-            with tag('body'):
-                with tag('h1'):
-                    text(fileOrDir)
-            i = 0
-            for subP in subpath:
-                with tag('h2'):
-                    text(subP)
+        except Exception as e:
+            print(e)
 
-                for caption in webvtt.read(subP):
-                    # print(caption.start, caption.end, caption.text)
-                    temp = video.subclip(caption.start,caption.end)
-                    temp.write_videofile(join(savepath, str(i)+".mp4"))
-                    with tag('h3'):
-                        text(caption.text)
-                    with tag('video', ('loop',''), ('autoplay','')):
-                        doc.stag('source',src=str(i)+".mp4")
-                    i+=1
-        html = open(join(savepath,"index.html"),'w')
-        html.write(doc.getvalue())
-        html.close()
+        try:
+            video = VideoFileClip(videopath)
+            doc, tag, text = Doc().tagtext()
+            with tag('html'):
+                with tag('body'):
+                    with tag('h1'):
+                        text(fileOrDir)
+                i = 0
+                for subP in subpath:
+                    with tag('h2'):
+                        text(subP)
+
+                    for caption in webvtt.read(subP):
+                        with tag('h3'):
+                            text(caption.text)
+
+                        try:
+                            # print(caption.start, caption.end, caption.text)
+                            video.subclip(caption.start, caption.end).write_gif(join(savepath, str(i) + ".gif"), fps=15)
+                            with tag('div'):
+                                doc.stag('img', src=str(i) + ".gif", alt=caption.start)
+                        except Exception as e:
+                            print(e)
+
+                        i += 1
+            html = open(join(savepath, "index.html"), 'w')
+            html.write(doc.getvalue())
+            html.close()
+        except Exception as e:
+            print(e)
 
